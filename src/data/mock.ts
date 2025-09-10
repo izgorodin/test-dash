@@ -1,3 +1,12 @@
+/**
+ * Mock data generators for asset time series.
+ * 
+ * Provides realistic financial data simulation with:
+ * - Random walk price movements
+ * - Seasonal drift patterns
+ * - Multiple asset types
+ * - Configurable time ranges (max 2 years)
+ */
 import { addDays, eachDayOfInterval, subDays } from 'date-fns'
 import { PALETTE_10 } from './palette'
 

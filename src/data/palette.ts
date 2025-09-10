@@ -1,3 +1,9 @@
+/**
+ * Color palette for chart assets.
+ * 
+ * 10 distinct colors optimized for dark theme visibility
+ * and accessibility. Used for asset lines and selections.
+ */
 export const PALETTE_10 = [
   '#60a5fa', // blue-400
   '#22c55e', // green-500

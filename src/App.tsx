@@ -1,3 +1,9 @@
+/**
+ * Main application component.
+ * 
+ * Manages data source selection and coordinates data flow between
+ * the chart component and data table.
+ */
 import { MultiAssetChart } from './components/MultiAssetChart'
 import { DataProvider, type DataSource, type AssetRow } from './data/DataProvider'
 import { AssetTable } from './components/AssetTable'
@@ -9,23 +15,47 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1>Asset Dashboard</h1>
-            <p className="muted">Multi-asset time series chart with editable mock DB</p>
+            <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem', fontWeight: 700 }}>Asset Dashboard</h1>
+            <p className="muted" style={{ margin: 0, fontSize: '0.95rem' }}>Multi-asset time series chart with editable mock DB</p>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <label htmlFor="data-source" className="muted">Data source:</label>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.75rem',
+            padding: '0.75rem 1rem',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            minWidth: '200px'
+          }}>
+            <div style={{ 
+              width: '8px', 
+              height: '8px', 
+              borderRadius: '50%', 
+              backgroundColor: source === 'json' ? '#22c55e' : source === 'generator' ? '#f59e0b' : '#60a5fa'
+            }} />
+            <label htmlFor="data-source" className="muted" style={{ fontSize: '0.85rem', fontWeight: 500 }}>Source:</label>
             <select
               id="data-source"
               className="tab"
               value={source}
               onChange={(e) => setSource(e.target.value as DataSource)}
               aria-label="Data source"
+              style={{ 
+                background: 'transparent', 
+                border: 'none', 
+                color: '#fff',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                outline: 'none'
+              }}
             >
               <option value="auto">Auto</option>
-              <option value="json">JSON only</option>
-              <option value="generator">Generator only</option>
+              <option value="json">JSON</option>
+              <option value="generator">Generator</option>
             </select>
           </div>
         </div>

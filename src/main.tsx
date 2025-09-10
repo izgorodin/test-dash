@@ -1,3 +1,8 @@
+/**
+ * Application entry point.
+ * 
+ * Sets up React root and imports global styles.
+ */
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'

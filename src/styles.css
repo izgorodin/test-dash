@@ -1,3 +1,12 @@
+/**
+ * Global styles for Asset Dashboard.
+ * 
+ * Dark theme with professional color palette:
+ * - Deep blue/slate backgrounds
+ * - Green accent color (#22c55e)
+ * - Custom React DatePicker theming
+ * - Responsive layout with cards
+ */
 :root {
   --bg: #0b0f19; /* near slate-950 */
   --panel: #0f172a;

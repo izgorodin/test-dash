@@ -1,3 +1,13 @@
+/**
+ * Data provider with flexible source management.
+ * 
+ * Handles asset data loading from multiple sources:
+ * - JSON file (mock-db.json)
+ * - Generated mock data
+ * - Auto mode (JSON first, fallback to generator)
+ * 
+ * Transforms raw data into normalized rows and grouped series.
+ */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { AssetSeries } from './mock'
 import { generateMockAssets } from './mock'
