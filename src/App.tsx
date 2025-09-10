@@ -1,4 +1,3 @@
-import { AssetChart } from './components/AssetChart'
 import { MultiAssetChart } from './components/MultiAssetChart'
 import { DataProvider } from './data/DataProvider'
 import { AssetTable } from './components/AssetTable'
@@ -8,7 +7,7 @@ export default function App() {
     <div className="app">
       <header className="header">
         <h1>Asset Dashboard</h1>
-        <p className="muted">График стоимости активов по датам</p>
+        <p className="muted">Multi-asset time series chart with an editable mock DB</p>
       </header>
       <main className="content">
         <DataProvider>

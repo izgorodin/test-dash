@@ -11,8 +11,8 @@
     "paths": {
       "@/*": ["src/*"]
     },
-  "types": ["vitest/globals"],
-  "resolveJsonModule": true
+    "types": ["vitest/globals"],
+    "resolveJsonModule": true
   },
   "include": ["src", "vite.config.ts"]
 }

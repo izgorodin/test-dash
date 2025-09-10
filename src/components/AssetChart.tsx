@@ -14,7 +14,11 @@ import { generateMockSeries } from '../data/mock'
 type Point = { date: string; value: number }
 
 const currency = (n: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(n)
 
 export function AssetChart() {
   const [days, setDays] = useState<30 | 90 | 180 | 365>(180)
@@ -30,6 +34,7 @@ export function AssetChart() {
               key={d}
               className={d === days ? 'tab active' : 'tab'}
               onClick={() => setDays(d as typeof days)}
+              aria-pressed={d === days}
             >
               {d}d
             </button>
@@ -62,7 +67,11 @@ export function AssetChart() {
               width={80}
             />
             <Tooltip
-              contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
+              contentStyle={{
+                background: '#0f172a',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+              }}
               labelFormatter={(d) => format(parseISO(String(d)), 'd MMM yyyy')}
               formatter={(v) => [currency(Number(v)), 'Value']}
             />

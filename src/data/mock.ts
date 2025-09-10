@@ -49,7 +49,7 @@ export function generateMockAssets(count: number, days: number): AssetSeries[] {
     'Bonds',
     'Private Equity',
     'Venture',
-    'Cash'
+    'Cash',
   ]
   const num = Math.min(10, Math.max(1, count))
   return new Array(num).fill(0).map((_, i) => {
@@ -65,6 +65,11 @@ export function generateMockAssets(count: number, days: number): AssetSeries[] {
       value = Math.max(200_000, value * (1 + change))
       return { date: d.toISOString().slice(0, 10), value: Math.round(value) }
     })
-    return { key: `asset_${i}`, name: names[i] ?? `Asset ${i+1}`, color: PALETTE_10[i % PALETTE_10.length], points }
+    return {
+      key: `asset_${i}`,
+      name: names[i] ?? `Asset ${i + 1}`,
+      color: PALETTE_10[i % PALETTE_10.length],
+      points,
+    }
   })
 }

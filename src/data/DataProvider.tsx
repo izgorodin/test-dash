@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import React, { createContext, useContext, useMemo, useState } from 'react'
 import type { AssetSeries } from './mock'
 import { generateMockAssets } from './mock'
 import mockDB from './mock-db.json'
@@ -27,7 +27,9 @@ async function mockFetchRows(assets: number, days: number): Promise<AssetRow[]> 
   // simulate latency
   await new Promise((r) => setTimeout(r, 200))
   // If user edited mock-db.json, prefer it; otherwise fallback to generator
-  const sets = (mockDB?.assets?.length ? mockDB.assets : generateMockAssets(assets, days)) as Array<{
+  const sets = (
+    mockDB?.assets?.length ? mockDB.assets : generateMockAssets(assets, days)
+  ) as Array<{
     id: string
     name: string
     points: { date: string; value: number }[]
@@ -65,7 +67,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       arr.push(r)
       byAsset.set(r.id, arr)
     }
-    return [...byAsset.entries()].map(([id, arr], idx) => ({
+    return [...byAsset.entries()].map(([id, arr]) => ({
       key: id,
       name: arr[0]?.asset ?? id,
       color: undefined as any, // цвет предоставит визуальный слой
@@ -75,7 +77,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }))
   }, [rows])
 
-  const value = useMemo<DataState>(() => ({ rows, series, isLoading, reload }), [rows, series, isLoading])
+  const value = useMemo<DataState>(
+    () => ({ rows, series, isLoading, reload }),
+    [rows, series, isLoading],
+  )
 
   return <DataCtx.Provider value={value}>{children}</DataCtx.Provider>
 }

@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "date-fns": "^3.6.0",
@@ -16,9 +18,16 @@
     "recharts": "^2.12.7"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.6.0",
+    "@typescript-eslint/parser": "^8.6.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^9.9.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "prettier": "^3.3.3",
     "typescript": "^5.5.4",
     "vite": "^5.4.2",
     "vitest": "^2.0.5"
