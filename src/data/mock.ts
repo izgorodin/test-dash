@@ -2,8 +2,11 @@ import { addDays, eachDayOfInterval, subDays } from 'date-fns'
 import { PALETTE_10 } from './palette'
 
 export function generateMockSeries(days: number) {
+  // Hard cap: do not generate more than 2 years of data
+  const MAX_DAYS = 730
+  const span = Math.min(Math.max(1, days), MAX_DAYS)
   const end = new Date()
-  const start = subDays(end, days - 1)
+  const start = subDays(end, span - 1)
   const dates = eachDayOfInterval({ start, end })
 
   let value = 10_000_000 // start value
@@ -34,7 +37,7 @@ export function extendSeries(series: { date: string; value: number }[], extraDay
 export type AssetSeries = {
   key: string
   name: string
-  color: string
+  color?: string
   points: { date: string; value: number }[]
 }
 
@@ -54,10 +57,13 @@ export function generateMockAssets(count: number, days: number): AssetSeries[] {
   const num = Math.min(10, Math.max(1, count))
   return new Array(num).fill(0).map((_, i) => {
     const base = 2_000_000 + i * 500_000
-    // сдвигаем сид для разнообразия
+      // offset seed for variation
     let value = base + Math.random() * 1_000_000
-    const end = new Date()
-    const start = subDays(end, days - 1)
+  // Hard cap: do not generate more than 2 years of data
+  const MAX_DAYS = 730
+  const span = Math.min(Math.max(1, days), MAX_DAYS)
+  const end = new Date()
+  const start = subDays(end, span - 1)
     const dates = eachDayOfInterval({ start, end })
     const points = dates.map((d, idx) => {
       const drift = Math.sin((idx + i * 3) / 14) * 0.003

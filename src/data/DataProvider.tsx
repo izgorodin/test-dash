@@ -25,48 +25,54 @@ const DataCtx = createContext<DataState | null>(null)
 
 // A mock fetcher simulating a DB call and converting into table rows
 // Always returns a full dataset without applying presentation filters
-async function mockFetchRows(): Promise<AssetRow[]> {
+export type DataSource = 'auto' | 'json' | 'generator'
+async function mockFetchRows(source: DataSource): Promise<AssetRow[]> {
   // simulate latency
   await new Promise((r) => setTimeout(r, 200))
-  // If user edited mock-db.json, prefer it; otherwise fallback to generator (10 assets, 365 days)
-  const baseSets = (
-    mockDB?.assets?.length ? mockDB.assets : generateMockAssets(10, 365)
-  ) as Array<{
-    id: string
-    name: string
-    points: { date: string; value: number }[]
-  }>
+  // Choose source: json/generator/auto
+  let baseSets: Array<{ id: string; name: string; points: { date: string; value: number }[] }> | null = null
+  if (source === 'json' || source === 'auto') {
+    baseSets = (mockDB?.assets?.length ? mockDB.assets : null) as any
+  }
+  if (!baseSets && (source === 'generator' || source === 'auto')) {
+    baseSets = generateMockAssets(10, 365) as any
+  }
+  if (!baseSets) baseSets = []
   // Flatten ALL data to table-like rows
   const rows: AssetRow[] = []
   for (const a of baseSets) {
     for (const p of a.points) {
-      // a.id for JSON, a.key for generator
-      rows.push({ id: (a as any).key ?? a.id, asset: a.name, date: p.date, value: p.value })
+      const id = (a as any).key ?? a.id
+      rows.push({ id, asset: a.name, date: p.date, value: p.value })
     }
   }
   return rows
 }
 
-export function DataProvider({ children }: { children: React.ReactNode }) {
+export function DataProvider({
+  children,
+  source = 'auto',
+}: {
+  children: React.ReactNode
+  source?: DataSource
+}) {
   const [rows, setRows] = useState<AssetRow[]>([])
   const [isLoading, setLoading] = useState(false)
 
   const reload: DataState['reload'] = useCallback(async () => {
     setLoading(true)
     try {
-      const r = await mockFetchRows()
+      const r = await mockFetchRows(source)
       setRows(r)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [source])
 
   // Load once on mount; UI controls must not trigger reloads here
   useEffect(() => {
-    // Only load if empty to avoid duplicate fetches on HMR
-    if (!rows.length) void reload()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    void reload()
+  }, [reload])
 
   const series: AssetSeries[] = useMemo(() => {
     const byAsset = new Map<string, AssetRow[]>()
@@ -78,7 +84,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return [...byAsset.entries()].map(([id, arr]) => ({
       key: id,
       name: arr[0]?.asset ?? id,
-      color: undefined as any, // цвет предоставит визуальный слой
+      color: undefined,
       points: arr
         .sort((a, b) => a.date.localeCompare(b.date))
         .map((r) => ({ date: r.date, value: r.value })),

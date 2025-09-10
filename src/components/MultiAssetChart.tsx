@@ -10,10 +10,16 @@ import {
   YAxis,
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import { PALETTE_10 } from '../data/palette'
 import { useData } from '../data/DataProvider'
+import type { AssetSeries } from '../data/mock'
 
-type Combined = { date: string; [key: string]: number | string }
+type Combined = {
+  date: string
+  [assetKey: string]: number | string
+}
 
 const currency = (n: number) =>
   new Intl.NumberFormat('en-US', {
@@ -23,8 +29,10 @@ const currency = (n: number) =>
   }).format(n)
 
 export function MultiAssetChart() {
-  const [days, setDays] = useState<30 | 90 | 180 | 365>(180)
-  const [count, setCount] = useState(5)
+  const [days, setDays] = useState<30 | 90 | 180 | 365 | 'custom'>(180)
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
+  const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set())
   const { series, reload, isLoading } = useData()
 
   // Load full dataset once; presentation filters are applied below
@@ -33,26 +41,45 @@ export function MultiAssetChart() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const visibleSeries = useMemo(() => series.slice(0, count), [series, count])
+  // Initialize all assets as selected when series data loads
+  useEffect(() => {
+    if (series.length > 0 && selectedAssets.size === 0) {
+      setSelectedAssets(new Set(series.map(s => s.key)))
+    }
+  }, [series, selectedAssets.size])
+
+  const visibleSeries = useMemo(() => 
+    series.filter(s => selectedAssets.has(s.key)), 
+    [series, selectedAssets]
+  )
 
   const data: Combined[] = useMemo(() => {
-    // select first N assets and slice by date range relative to max available date
     if (!visibleSeries.length) return []
-    const maxDate = visibleSeries
-      .flatMap((s) => s.points.map((p) => p.date))
-      .reduce((m, d) => (d > m ? d : m), visibleSeries[0].points[0]?.date ?? new Date().toISOString().slice(0, 10))
-    const thresholdISO = (() => {
+    
+    let startDate: string
+    let endDate: string
+    
+    if (days === 'custom') {
+      if (!customStartDate || !customEndDate) return []
+      startDate = customStartDate
+      endDate = customEndDate
+    } else {
+      const maxDate = visibleSeries
+        .flatMap((s) => s.points.map((p) => p.date))
+        .reduce((m, d) => (d > m ? d : m), visibleSeries[0].points[0]?.date ?? new Date().toISOString().slice(0, 10))
+      
+      endDate = maxDate
       const end = new Date(maxDate)
       const ms = end.getTime() - (days - 1) * 24 * 60 * 60 * 1000
-      return new Date(ms).toISOString().slice(0, 10)
-    })()
+      startDate = new Date(ms).toISOString().slice(0, 10)
+    }
 
     const assets = visibleSeries.map((s, i) => ({
       ...s,
       color: s.color ?? PALETTE_10[i % PALETTE_10.length],
-      points: s.points.filter((p) => p.date >= thresholdISO),
+      points: s.points.filter((p) => p.date >= startDate && p.date <= endDate),
     }))
-    // объединяем точки по дате
+    // combine points by date
     const byDate = new Map<string, Combined>()
     for (const a of assets) {
       for (const p of a.points) {
@@ -61,32 +88,45 @@ export function MultiAssetChart() {
       }
     }
     return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
-  }, [visibleSeries, days])
+  }, [visibleSeries, days, customStartDate, customEndDate])
 
   return (
     <div className="card">
       <div className="card-header">
         <h2>Assets Over Time</h2>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="tabs" role="tablist" aria-label="Date range">
             {[30, 90, 180, 365].map((d) => (
               <button
                 key={d}
                 className={d === days ? 'tab active' : 'tab'}
                 aria-pressed={d === days}
-                onClick={() => setDays(d as any)}
+                onClick={() => {
+                  setDays(d as 30 | 90 | 180 | 365)
+                }}
               >
                 {d}d
               </button>
             ))}
+            <button
+              className={days === 'custom' ? 'tab active' : 'tab'}
+              aria-pressed={days === 'custom'}
+              onClick={() => setDays('custom')}
+            >
+              Custom
+            </button>
           </div>
-          <select className="tab" value={count} onChange={(e) => setCount(Number(e.target.value))}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-              <option key={n} value={n}>
-                {n} assets
-              </option>
-            ))}
-          </select>
+          {days === 'custom' && (
+            <CustomDateRangePicker 
+              startDate={customStartDate}
+              endDate={customEndDate}
+              onStartDateChange={setCustomStartDate}
+              onEndDateChange={setCustomEndDate}
+              minDate={series.flatMap(s => s.points.map(p => p.date)).sort()[0]}
+              maxDate={series.flatMap(s => s.points.map(p => p.date)).sort().reverse()[0]}
+            />
+          )}
+          <span className="muted">{visibleSeries.length}/{series.length} assets</span>
         </div>
       </div>
       <div className="chart-wrap">
@@ -105,7 +145,11 @@ export function MultiAssetChart() {
           </div>
         )}
         <ResponsiveContainer width="100%" height={420}>
-          <AreaChart data={data} margin={{ left: 8, right: 12, top: 12, bottom: 8 }}>
+          <AreaChart 
+            key={`${days}-${[...selectedAssets].sort().join(',')}-${data.length}`}
+            data={data} 
+            margin={{ left: 8, right: 12, top: 12, bottom: 8 }}
+          >
             <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
             <XAxis
               dataKey="date"
@@ -142,9 +186,9 @@ export function MultiAssetChart() {
               )}
               wrapperStyle={{ paddingTop: 8 }}
             />
-            {visibleSeries.map((a, i) => (
-              <defs key={`defs_${a.key}`}>
-                <linearGradient id={`g_${a.key}`} x1="0" y1="0" x2="0" y2="1">
+            <defs>
+              {visibleSeries.map((a, i) => (
+                <linearGradient key={`g_${a.key}`} id={`g_${a.key}`} x1="0" y1="0" x2="0" y2="1">
                   <stop
                     offset="5%"
                     stopColor={PALETTE_10[i % PALETTE_10.length]}
@@ -156,8 +200,8 @@ export function MultiAssetChart() {
                     stopOpacity={0}
                   />
                 </linearGradient>
-              </defs>
-            ))}
+              ))}
+            </defs>
             {visibleSeries.map((a, i) => (
               <Area
                 key={a.key}
@@ -171,6 +215,160 @@ export function MultiAssetChart() {
           </AreaChart>
         </ResponsiveContainer>
       </div>
+      <AssetSelector 
+        series={series}
+        selectedAssets={selectedAssets}
+        onSelectionChange={setSelectedAssets}
+      />
+    </div>
+  )
+}
+
+type AssetSelectorProps = {
+  series: AssetSeries[]
+  selectedAssets: Set<string>
+  onSelectionChange: (selected: Set<string>) => void
+}
+
+function AssetSelector({ series, selectedAssets, onSelectionChange }: AssetSelectorProps) {
+  const toggleAsset = (assetKey: string) => {
+    const newSelected = new Set(selectedAssets)
+    if (newSelected.has(assetKey)) {
+      newSelected.delete(assetKey)
+    } else {
+      newSelected.add(assetKey)
+    }
+    onSelectionChange(newSelected)
+  }
+
+  const toggleAll = () => {
+    if (selectedAssets.size === series.length) {
+      onSelectionChange(new Set())
+    } else {
+      onSelectionChange(new Set(series.map(s => s.key)))
+    }
+  }
+
+  return (
+    <div className="card" style={{ marginTop: '1rem' }}>
+      <div className="card-header">
+        <h3>Asset Selection</h3>
+        <button 
+          className="tab" 
+          onClick={toggleAll}
+          title={selectedAssets.size === series.length ? 'Deselect All' : 'Select All'}
+        >
+          {selectedAssets.size === series.length ? 'Deselect All' : 'Select All'}
+        </button>
+      </div>
+      <div style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
+        {series.map((asset, index) => {
+          const isSelected = selectedAssets.has(asset.key)
+          const color = PALETTE_10[index % PALETTE_10.length]
+          return (
+            <label 
+              key={asset.key} 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                cursor: 'pointer',
+                padding: '0.5rem',
+                borderRadius: '4px',
+                border: `1px solid ${isSelected ? color : 'rgba(255,255,255,0.1)'}`,
+                backgroundColor: isSelected ? `${color}10` : 'transparent'
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => toggleAsset(asset.key)}
+                style={{ accentColor: color }}
+              />
+              <div 
+                style={{ 
+                  width: '12px', 
+                  height: '12px', 
+                  backgroundColor: color,
+                  borderRadius: '2px'
+                }} 
+              />
+              <span style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)' }}>
+                {asset.name}
+              </span>
+            </label>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+type CustomDateRangePickerProps = {
+  startDate: string
+  endDate: string
+  onStartDateChange: (date: string) => void
+  onEndDateChange: (date: string) => void
+  minDate: string
+  maxDate: string
+}
+
+function CustomDateRangePicker({ 
+  startDate, 
+  endDate, 
+  onStartDateChange, 
+  onEndDateChange, 
+  minDate,
+  maxDate
+}: CustomDateRangePickerProps) {
+  const handleStartDateChange = (date: Date | null) => {
+    if (date) {
+      onStartDateChange(date.toISOString().slice(0, 10))
+    } else {
+      onStartDateChange('')
+    }
+  }
+
+  const handleEndDateChange = (date: Date | null) => {
+    if (date) {
+      onEndDateChange(date.toISOString().slice(0, 10))
+    } else {
+      onEndDateChange('')
+    }
+  }
+
+  const minDateObj = minDate ? parseISO(minDate) : undefined
+  const maxDateObj = maxDate ? parseISO(maxDate) : undefined
+  const startDateObj = startDate ? parseISO(startDate) : null
+  const endDateObj = endDate ? parseISO(endDate) : null
+
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <DatePicker
+        selected={startDateObj}
+        onChange={handleStartDateChange}
+        selectsStart
+        startDate={startDateObj}
+        endDate={endDateObj}
+        minDate={minDateObj}
+        maxDate={maxDateObj}
+        dateFormat="d MMM yyyy"
+        placeholderText="Start date"
+        className="date-picker"
+      />
+      <span style={{ color: 'rgba(255,255,255,0.6)' }}>to</span>
+      <DatePicker
+        selected={endDateObj}
+        onChange={handleEndDateChange}
+        selectsEnd
+        startDate={startDateObj}
+        endDate={endDateObj}
+        minDate={startDateObj || minDateObj}
+        maxDate={maxDateObj}
+        dateFormat="d MMM yyyy"
+        placeholderText="End date"
+        className="date-picker"
+      />
     </div>
   )
 }

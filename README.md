@@ -10,6 +10,7 @@ Student-quality example of a modern dashboard: dark theme, multi-asset time seri
 - Editable mock data file: `src/data/mock-db.json`
 - Simple data table to inspect raw rows
  - Clean separation of concerns: provider loads full data, UI applies filters
+ - Mock generators cap history to max 2 years (730 days)
 
 ## Quick start
 
@@ -29,14 +30,29 @@ Update `src/data/mock-db.json`. The app hot-reloads your changes instantly.
 
 Schema:
 
-- `assets[]` — list of assets
-- Each asset: `{ id: string, name: string, points: { date: 'YYYY-MM-DD', value: number }[] }`
+
+### Choose data source
+
+Use the “Data source” selector in the header:
+- Auto — prefer JSON if present, otherwise fall back to generator
+- JSON — use only `mock-db.json`
+- Generator — ignore JSON and synthesize data
 
 ## Scripts
 
 - `npm run dev` — start dev server
 - `npm run build` — production build
 - `npm run preview` — preview the production build
+
+## Deployment
+
+The project automatically deploys to GitHub Pages when code is pushed to the `rc` branch. The deployment workflow:
+
+1. Builds the project using `npm run build`
+2. Uploads the `dist` folder to GitHub Pages
+3. Makes the site available at your GitHub Pages URL
+
+The deployment is configured in `.github/workflows/deploy.yml` and requires GitHub Pages to be enabled in your repository settings.
 
 ## Code quality
 
