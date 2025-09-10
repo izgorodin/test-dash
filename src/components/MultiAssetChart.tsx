@@ -27,16 +27,31 @@ export function MultiAssetChart() {
   const [count, setCount] = useState(5)
   const { series, reload, isLoading } = useData()
 
+  // Load full dataset once; presentation filters are applied below
   useEffect(() => {
-    reload({ assets: count, days })
-  }, [count, days, reload])
+    reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const visibleSeries = useMemo(() => series.slice(0, count), [series, count])
 
   const data: Combined[] = useMemo(() => {
-    const assets = series.map((s, i) => ({
+    // select first N assets and slice by date range relative to max available date
+    if (!visibleSeries.length) return []
+    const maxDate = visibleSeries
+      .flatMap((s) => s.points.map((p) => p.date))
+      .reduce((m, d) => (d > m ? d : m), visibleSeries[0].points[0]?.date ?? new Date().toISOString().slice(0, 10))
+    const thresholdISO = (() => {
+      const end = new Date(maxDate)
+      const ms = end.getTime() - (days - 1) * 24 * 60 * 60 * 1000
+      return new Date(ms).toISOString().slice(0, 10)
+    })()
+
+    const assets = visibleSeries.map((s, i) => ({
       ...s,
       color: s.color ?? PALETTE_10[i % PALETTE_10.length],
+      points: s.points.filter((p) => p.date >= thresholdISO),
     }))
-    if (!assets.length) return []
     // объединяем точки по дате
     const byDate = new Map<string, Combined>()
     for (const a of assets) {
@@ -46,7 +61,7 @@ export function MultiAssetChart() {
       }
     }
     return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
-  }, [series])
+  }, [visibleSeries, days])
 
   return (
     <div className="card">
@@ -127,7 +142,7 @@ export function MultiAssetChart() {
               )}
               wrapperStyle={{ paddingTop: 8 }}
             />
-            {series.map((a, i) => (
+            {visibleSeries.map((a, i) => (
               <defs key={`defs_${a.key}`}>
                 <linearGradient id={`g_${a.key}`} x1="0" y1="0" x2="0" y2="1">
                   <stop
@@ -143,7 +158,7 @@ export function MultiAssetChart() {
                 </linearGradient>
               </defs>
             ))}
-            {series.map((a, i) => (
+            {visibleSeries.map((a, i) => (
               <Area
                 key={a.key}
                 type="monotone"

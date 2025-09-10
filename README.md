@@ -9,6 +9,7 @@ Student-quality example of a modern dashboard: dark theme, multi-asset time seri
 - Data provider abstraction to swap mock DB for a real backend
 - Editable mock data file: `src/data/mock-db.json`
 - Simple data table to inspect raw rows
+ - Clean separation of concerns: provider loads full data, UI applies filters
 
 ## Quick start
 
@@ -40,6 +41,12 @@ Schema:
 ## Code quality
 
 ESLint + Prettier are configured. Recommended VS Code extensions are included in `.vscode/extensions.json`.
+
+## Architecture in brief
+
+- DataProvider (data layer): loads the full dataset (from `mock-db.json` or generator), exposes raw `rows` and grouped `series`. No UI filters here. `reload()` fetches all data.
+- MultiAssetChart (presentation): holds UI state (asset count, date range) and applies filtering locally; also handles colors, legend, and layout.
+- AssetTable: renders `rows` for inspection/debugging.
 
 ## License
 
