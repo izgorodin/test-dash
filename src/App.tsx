@@ -10,7 +10,7 @@ import { AssetTable } from './components/AssetTable'
 import { useState } from 'react'
 
 export default function App() {
-  const [source, setSource] = useState<DataSource>('auto')
+  const [source, setSource] = useState<DataSource>('generator')
   const [filteredData, setFilteredData] = useState<AssetRow[]>([])
   return (
     <div className="app">

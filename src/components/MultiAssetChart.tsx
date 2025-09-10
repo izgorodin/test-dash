@@ -53,10 +53,10 @@ export function MultiAssetChart({ onFilteredDataChange }: MultiAssetChartProps) 
 
   // Initialize all assets as selected when series data loads
   useEffect(() => {
-    if (series.length > 0 && selectedAssets.size === 0) {
+    if (series.length > 0) {
       setSelectedAssets(new Set(series.map(s => s.key)))
     }
-  }, [series, selectedAssets.size])
+  }, [series])
 
   const { visibleSeries, data, filteredRows } = useChartData(series, {
     days,
