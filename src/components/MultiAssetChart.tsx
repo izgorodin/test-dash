@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -14,12 +14,9 @@ import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { PALETTE_10 } from '../data/palette'
 import { useData } from '../data/DataProvider'
+import { useChartData } from '../hooks/useChartData'
 import type { AssetSeries } from '../data/mock'
-
-type Combined = {
-  date: string
-  [assetKey: string]: number | string
-}
+import type { AssetRow } from '../data/DataProvider'
 
 const currency = (n: number) =>
   new Intl.NumberFormat('en-US', {
@@ -28,7 +25,20 @@ const currency = (n: number) =>
     maximumFractionDigits: 0,
   }).format(n)
 
-export function MultiAssetChart() {
+type MultiAssetChartProps = {
+  /** Callback fired when filtered data changes for external components */
+  onFilteredDataChange?: (filteredRows: AssetRow[]) => void
+}
+
+/**
+ * Interactive multi-asset chart component with filtering capabilities.
+ * Features:
+ * - Time range selection (30d/90d/180d/365d/custom)
+ * - Asset selection with checkboxes
+ * - Custom date range picker
+ * - Real-time chart updates
+ */
+export function MultiAssetChart({ onFilteredDataChange }: MultiAssetChartProps) {
   const [days, setDays] = useState<30 | 90 | 180 | 365 | 'custom'>(180)
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
@@ -48,47 +58,17 @@ export function MultiAssetChart() {
     }
   }, [series, selectedAssets.size])
 
-  const visibleSeries = useMemo(() => 
-    series.filter(s => selectedAssets.has(s.key)), 
-    [series, selectedAssets]
-  )
+  const { visibleSeries, data, filteredRows } = useChartData(series, {
+    days,
+    customStartDate,
+    customEndDate,
+    selectedAssets
+  })
 
-  const data: Combined[] = useMemo(() => {
-    if (!visibleSeries.length) return []
-    
-    let startDate: string
-    let endDate: string
-    
-    if (days === 'custom') {
-      if (!customStartDate || !customEndDate) return []
-      startDate = customStartDate
-      endDate = customEndDate
-    } else {
-      const maxDate = visibleSeries
-        .flatMap((s) => s.points.map((p) => p.date))
-        .reduce((m, d) => (d > m ? d : m), visibleSeries[0].points[0]?.date ?? new Date().toISOString().slice(0, 10))
-      
-      endDate = maxDate
-      const end = new Date(maxDate)
-      const ms = end.getTime() - (days - 1) * 24 * 60 * 60 * 1000
-      startDate = new Date(ms).toISOString().slice(0, 10)
-    }
-
-    const assets = visibleSeries.map((s, i) => ({
-      ...s,
-      color: s.color ?? PALETTE_10[i % PALETTE_10.length],
-      points: s.points.filter((p) => p.date >= startDate && p.date <= endDate),
-    }))
-    // combine points by date
-    const byDate = new Map<string, Combined>()
-    for (const a of assets) {
-      for (const p of a.points) {
-        if (!byDate.has(p.date)) byDate.set(p.date, { date: p.date })
-        byDate.get(p.date)![a.key] = p.value
-      }
-    }
-    return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
-  }, [visibleSeries, days, customStartDate, customEndDate])
+  // Notify parent about filtered data changes
+  useEffect(() => {
+    onFilteredDataChange?.(filteredRows)
+  }, [filteredRows, onFilteredDataChange])
 
   return (
     <div className="card">

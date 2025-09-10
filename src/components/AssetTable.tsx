@@ -1,15 +1,25 @@
 import { useMemo } from 'react'
-import { useData } from '../data/DataProvider'
+import type { AssetRow } from '../data/DataProvider'
 
-export function AssetTable() {
-  const { rows, isLoading } = useData()
+type AssetTableProps = {
+  /** Filtered asset data rows to display */
+  filteredRows?: AssetRow[]
+  /** Loading state indicator */
+  isLoading?: boolean
+}
+
+/**
+ * Data table displaying filtered asset information.
+ * Shows only the data that matches current chart filters.
+ */
+export function AssetTable({ filteredRows = [], isLoading = false }: AssetTableProps) {
 
   const head = useMemo(() => ['Asset', 'Date', 'Value'], [])
 
   return (
     <div className="card">
       <div className="card-header">
-        <h2>Data Table (mock DB)</h2>
+        <h2>Filtered Data ({filteredRows.length} records)</h2>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -38,16 +48,15 @@ export function AssetTable() {
                   Loading…
                 </td>
               </tr>
-            ) : rows.length === 0 ? (
+            ) : filteredRows.length === 0 ? (
               <tr>
                 <td colSpan={head.length} style={{ padding: 16, color: 'var(--muted)' }}>
-                  No data
+                  No data matches current filters
                 </td>
               </tr>
             ) : (
-              rows
-                .slice(-200)
-                .reverse()
+              filteredRows
+                .slice(0, 200)
                 .map((r, i) => (
                   <tr key={i}>
                     <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
