@@ -1,16 +1,20 @@
 # Asset Dashboard (React + Vite)
 
+**🚀 [View Live Demo](https://izgorodin.github.io/test-dash/)**
+
 Student-quality example of a modern dashboard: dark theme, multi-asset time series chart, and an editable mock database. Built with React, TypeScript, Vite, and Recharts.
 
 ## Features
 
-- Multi-asset area chart (up to 10 series) with a clean dark UI
-- Date range switcher (30/90/180/365 days)
-- Data provider abstraction to swap mock DB for a real backend
-- Editable mock data file: `src/data/mock-db.json`
-- Simple data table to inspect raw rows
- - Clean separation of concerns: provider loads full data, UI applies filters
- - Mock generators cap history to max 2 years (730 days)
+- 📊 **Interactive multi-asset chart** (up to 10 series) with professional dark UI
+- 📅 **Flexible date ranges** - preset periods (30/90/180/365 days) or custom date picker
+- ✅ **Asset selection** - visual checkboxes to show/hide specific assets
+- 📊 **Synchronized data table** - shows only filtered data matching the chart
+- 📱 **Data source switching** - JSON file, generator, or auto mode
+- 🎨 **Professional React DatePicker** with dark theme integration
+- 🚀 **Real-time updates** - chart and table sync automatically
+- 🛠️ **Clean architecture** - separation of data, business logic, and UI
+- 📝 **Full TypeScript** - comprehensive type safety and JSDoc documentation
 
 ## Quick start
 

@@ -30,10 +30,11 @@ export type ChartFilters = {
 export function useChartData(series: AssetSeries[], filters: ChartFilters) {
   const { days, customStartDate, customEndDate, selectedAssets } = filters
   
-  const visibleSeries = useMemo(() => 
-    series.filter(s => selectedAssets.has(s.key)), 
-    [series, selectedAssets]
-  )
+  const visibleSeries = useMemo(() => {
+    // If no assets selected, show all by default
+    if (selectedAssets.size === 0) return series
+    return series.filter(s => selectedAssets.has(s.key))
+  }, [series, selectedAssets])
 
   const { data, filteredRows } = useMemo(() => {
     if (!visibleSeries.length) return { data: [], filteredRows: [] }
